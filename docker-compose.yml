@@ -128,6 +128,19 @@ services:
     networks:
       - ecommerce
 
+  auth-db-tests:
+    build: ./auth
+    volumes:
+      - ./auth/src:/app/src
+    depends_on:
+      mongodb-auth:
+        condition: service_healthy
+    environment:
+      - MONGODB_AUTH_URI=mongodb://mongodb-auth:27017/auth
+    networks:
+      - ecommerce
+    command: ["npm", "run", "test:db"]
+
 networks:
   ecommerce:
 

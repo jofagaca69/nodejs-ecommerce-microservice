@@ -5,6 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "mocha --timeout 20000 src/test/**/*.test.js --exit",
+    "test:db": "npm run test:db:insert && npm run test:db:select && npm run test:db:constraints",
+    "test:db:insert": "node src/db-tests/test_insert.js",
+    "test:db:select": "node src/db-tests/test_select.js",
+    "test:db:constraints": "node src/db-tests/test_constraints.js",
     "start": "node index.js"
   },
   "keywords": [],
@@ -17,6 +21,7 @@
     "mongoose": "^7.0.0"
   },
   "devDependencies": {
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "mongodb": "^6.0.0"
   }
 }
