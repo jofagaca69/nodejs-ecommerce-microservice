@@ -4,6 +4,20 @@ const httpProxy = require("http-proxy");
 const proxy = httpProxy.createProxyServer();
 const app = express();
 
+// Route for root path
+app.get("/", (req, res) => {
+  res.json({
+    message: "API Gateway - E-commerce Microservice",
+    version: "1.0.0",
+    status: "running",
+    endpoints: {
+      auth: "/auth",
+      products: "/products",
+      orders: "/orders"
+    }
+  });
+});
+
 // Route requests to the auth service
 app.use("/auth", (req, res) => {
   proxy.web(req, res, { target: "http://auth:3000" });

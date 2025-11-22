@@ -14,11 +14,17 @@ class App {
   }
 
   async connectDB() {
-    await mongoose.connect(config.mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("MongoDB connected");
+    try {
+      await mongoose.connect(config.mongoURI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log("MongoDB connected");
+    } catch (error) {
+      console.error("Error connecting to MongoDB:", error.message);
+      // Reintentar conexión después de 5 segundos
+      setTimeout(() => this.connectDB(), 5000);
+    }
   }
 
   async disconnectDB() {
