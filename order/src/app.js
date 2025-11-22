@@ -12,11 +12,17 @@ class App {
   }
 
   async connectDB() {
-    await mongoose.connect(config.mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    console.log("MongoDB connected");
+    try {
+      await mongoose.connect(config.mongoURI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      });
+      console.log("MongoDB connected");
+    } catch (error) {
+      console.error("Error connecting to MongoDB:", error.message);
+      // Reintentar conexión después de 5 segundos
+      setTimeout(() => this.connectDB(), 5000);
+    }
   }
 
   async disconnectDB() {
@@ -29,13 +35,13 @@ class App {
   
     setTimeout(async () => {
       try {
-        const amqpServer = "amqp://rabbitmq:5672";
+        const amqpServer = config.rabbitMQUrl || "amqp://rabbitmq:5672";
         const connection = await amqp.connect(amqpServer);
         console.log("Connected to RabbitMQ");
         const channel = await connection.createChannel();
-        await channel.assertQueue("orders");
+        await channel.assertQueue(config.rabbitMQQueue || "orders");
   
-        channel.consume("orders", async (data) => {
+        channel.consume(config.rabbitMQQueue || "orders", async (data) => {
           // Consume messages from the order queue on buy
           console.log("Consuming ORDER service");
           const { products, username, orderId } = JSON.parse(data.content);
@@ -63,6 +69,8 @@ class App {
         });
       } catch (err) {
         console.error("Failed to connect to RabbitMQ:", err.message);
+        // Reintentar conexión después de 5 segundos
+        setTimeout(() => this.setupOrderConsumer(), 5000);
       }
     }, 10000); // add a delay to wait for RabbitMQ to start in docker-compose
   }

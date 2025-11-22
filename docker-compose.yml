@@ -1,35 +1,93 @@
-version: "3.8"
-
 services:
+
+  mongodb-auth:
+      image: mongo:6.0
+      container_name: mongodb-auth
+      ports:
+        - "27017:27017"
+      volumes:
+        - mongodb_auth_data:/data/db
+      networks:
+        - ecommerce
+      healthcheck:
+        test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+        interval: 10s
+        timeout: 5s
+        retries: 5
+
+  mongodb-order:
+    image: mongo:6.0
+    container_name: mongodb-order
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_order_data:/data/db
+    networks:
+      - ecommerce
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongodb-product:
+    image: mongo:6.0
+    container_name: mongodb-product
+    ports:
+      - "27019:27017"
+    volumes:
+      - mongodb_product_data:/data/db
+    networks:
+      - ecommerce
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.8-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - ecommerce
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   auth:
     build: ./auth
     ports:
       - "3000:3000"
+    depends_on:
+      mongodb-auth:
+        condition: service_healthy
+    environment:
+      - MONGODB_AUTH_URI=mongodb://mongodb-auth:27017/auth
     env_file:
       - ./auth/.env
     networks:
       - ecommerce
-
-  rabbitmq:
-    image: rabbitmq:3.8-management-alpine
-    container_name: 'rabbitmq'
-    ports:
-        - 5672:5672
-        - 15672:15672
-    volumes:
-        - ~/.docker-conf/rabbitmq/data/:/var/lib/rabbitmq/
-        - ~/.docker-conf/rabbitmq/log/:/var/log/rabbitmq
-    networks:
-        - ecommerce
 
   order:
     build: ./order
     ports:
       - "3002:3002"
     depends_on:
-      - rabbitmq
+      mongodb-order:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGODB_ORDER_URI=mongodb://mongodb-order:27017/orders
     env_file:
       - ./order/.env
     networks:
@@ -40,9 +98,13 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      - rabbitmq
+      mongodb-product:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     environment:
       - RABBITMQ_URL=amqp://rabbitmq:5672
+      - MONGODB_PRODUCT_URI=mongodb://mongodb-product:27017/products
     env_file:
       - ./product/.env
     networks:
@@ -52,6 +114,15 @@ services:
     build: ./api-gateway
     ports:
       - "3003:3003"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      auth:
+        condition: service_started
+      order:
+        condition: service_started
+      product:
+        condition: service_started
     environment:
       - RABBITMQ_URL=amqp://rabbitmq:5672
     networks:
@@ -59,3 +130,8 @@ services:
 
 networks:
   ecommerce:
+
+volumes:
+  mongodb_auth_data:
+  mongodb_order_data:
+  mongodb_product_data:
