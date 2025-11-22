@@ -49,6 +49,13 @@ class AuthController {
       res.status(400).json({ message: err.message });
     }
   }
+
+  async deleteTestUsers(req, res) {
+    await this.authService.deleteTestUsers();
+    res.status(200).json({ message: "Test users deleted" });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
 }
 
 module.exports = AuthController;
