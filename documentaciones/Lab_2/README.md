@@ -1,17 +1,14 @@
 # Laboratory 2 - Integration Testing
+
 ## E-commerce Microservice - Pruebas de Integración
 
 ## 📋 Objetivo
 
-Este laboratorio implementa pruebas de integración para validar la comunicación entre el **API Gateway** y el **servicio de Autenticación (Auth)**. Las pruebas verifican que el flujo completo de peticiones HTTP funciona correctamente a través del gateway, asegurando que el enrutamiento, la autenticación y la autorización funcionan de manera integrada.
-
----
+Este laboratorio implementa las pruebas de integración para el **API Gateway** y el **Servicio de Autenticación (Auth)**. Verificamos tanto la **comunicación externa (HTTP)** a través del _Gateway_ como la **integración interna** del servicio con su base de datos **MongoDB**.
 
 ## 🏗️ Arquitectura del Sistema
 
 El proyecto utiliza una arquitectura de microservicios con un API Gateway como punto de entrada:
-
-
 
 ### Flujo de Peticiones
 
@@ -34,6 +31,7 @@ El proyecto utiliza una arquitectura de microservicios con un API Gateway como p
 ### 🎯 Objetivo de las Pruebas
 
 Validar que el API Gateway:
+
 - ✅ Enruta correctamente las peticiones al servicio de Auth
 - ✅ Preserva los datos de la petición (body, headers)
 - ✅ Retorna correctamente las respuestas del servicio
@@ -69,12 +67,14 @@ afterEach(async () => {
 **Descripción**: Verifica que un usuario puede registrarse correctamente a través del API Gateway.
 
 **Flujo**:
+
 1. Cliente envía petición POST a `/auth/register` con credenciales válidas
 2. API Gateway reenvía la petición al servicio Auth
 3. Servicio Auth crea el usuario en la base de datos
 4. Respuesta se retorna a través del gateway
 
 **Código**:
+
 ```15:26:api-gateway/__tests__/integration/gateway-auth.test.js
   it("Registro exitoso: Debe devolver la información del usuario registrado", async () => {
 
@@ -91,10 +91,12 @@ afterEach(async () => {
 ```
 
 **Validaciones**:
+
 - ✅ Status code: `200 OK`
 - ✅ Response body contiene `username` con el valor esperado
 
 **Resultado Esperado**:
+
 ```
 ✓ Registro exitoso: Debe devolver la información del usuario registrado
 ```
@@ -108,35 +110,39 @@ afterEach(async () => {
 **Descripción**: Verifica que el sistema rechaza correctamente intentos de registro con un username ya existente.
 
 **Flujo**:
+
 1. Se registra un usuario con username "testuser"
 2. Se intenta registrar otro usuario con el mismo username
 3. El servicio Auth detecta el duplicado
 4. Se retorna error 400 a través del gateway
 
 **Código**:
+
 ```28:42:api-gateway/__tests__/integration/gateway-auth.test.js
   it("Registro fallido: username ya existe", async () => {
     const user = {
       username: "testuser",
       password: "password123"
     };
-  
+
     await axios.post(`${gatewayUrl}/auth/register`, user);
-  
+
     const err = await axios
       .post(`${gatewayUrl}/auth/register`, user)
       .catch(e => e);
-  
+
     expect(err.response.status).toBe(400);
     expect(err.response.data).toHaveProperty("message", "Username already taken");
   });
 ```
 
 **Validaciones**:
+
 - ✅ Status code: `400 Bad Request`
 - ✅ Response body contiene mensaje de error: "Username already taken"
 
 **Resultado Esperado**:
+
 ```
 ✓ Registro fallido: username ya existe
 ```
@@ -150,6 +156,7 @@ afterEach(async () => {
 **Descripción**: Verifica que un usuario registrado puede autenticarse y obtener un token JWT.
 
 **Flujo**:
+
 1. Se registra un usuario
 2. Cliente envía petición POST a `/auth/login` con credenciales válidas
 3. API Gateway reenvía al servicio Auth
@@ -157,6 +164,7 @@ afterEach(async () => {
 5. Token se retorna a través del gateway
 
 **Código**:
+
 ```44:57:api-gateway/__tests__/integration/gateway-auth.test.js
   it("Login exitoso: Debe devolver el token de autenticación", async () => {
 
@@ -175,10 +183,12 @@ afterEach(async () => {
 ```
 
 **Validaciones**:
+
 - ✅ Status code: `200 OK`
 - ✅ Response body contiene propiedad `token`
 
 **Resultado Esperado**:
+
 ```
 ✓ Login exitoso: Debe devolver el token de autenticación
 ```
@@ -192,12 +202,14 @@ afterEach(async () => {
 **Descripción**: Verifica que el sistema rechaza correctamente intentos de login con credenciales incorrectas.
 
 **Flujo**:
+
 1. Se registra un usuario con credenciales válidas
 2. Se intenta hacer login con credenciales diferentes
 3. El servicio Auth valida y rechaza las credenciales
 4. Se retorna error 400 a través del gateway
 
 **Código**:
+
 ```59:79:api-gateway/__tests__/integration/gateway-auth.test.js
   it("Login erroneo: Debe devolver mensaje de error", async () => {
 
@@ -205,28 +217,30 @@ afterEach(async () => {
       username: "testuser",
       password: "password123"
     };
-  
+
     const userIncorrect = {
       username: "prueba",
       password: "contra"
     };
-  
+
     await axios.post(`${gatewayUrl}/auth/register`, user);
-  
+
     const err = await axios.post(`${gatewayUrl}/auth/login`, userIncorrect)
       .catch(e => e);
-  
+
     expect(err.response.status).toBe(400);
     expect(err.response.data).toHaveProperty("message", "Invalid username or password");
-  
+
   });
 ```
 
 **Validaciones**:
+
 - ✅ Status code: `400 Bad Request`
 - ✅ Response body contiene mensaje de error: "Invalid username or password"
 
 **Resultado Esperado**:
+
 ```
 ✓ Login erroneo: Debe devolver mensaje de error
 ```
@@ -240,6 +254,7 @@ afterEach(async () => {
 **Descripción**: Verifica que un usuario autenticado puede acceder a rutas protegidas usando el token JWT.
 
 **Flujo**:
+
 1. Se registra un usuario
 2. Se hace login y se obtiene un token JWT
 3. Cliente envía petición GET a `/auth/dashboard` con header `x-auth-token`
@@ -248,6 +263,7 @@ afterEach(async () => {
 6. Se retorna respuesta exitosa
 
 **Código**:
+
 ```82:99:api-gateway/__tests__/integration/gateway-auth.test.js
   it("Autenticación exitosa con token", async () => {
 
@@ -270,10 +286,12 @@ afterEach(async () => {
 ```
 
 **Validaciones**:
+
 - ✅ Status code: `200 OK`
 - ✅ El token JWT es válido y permite acceso a rutas protegidas
 
 **Resultado Esperado**:
+
 ```
 ✓ Autenticación exitosa con token
 ```
@@ -282,13 +300,43 @@ afterEach(async () => {
 
 ## 📋 Tabla de Diseño de Pruebas de Integración
 
-| Test ID | Escenario | Endpoint | Método | Input | Expected Status | Expected Response | Estado |
-| :-- | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| **INT-001** | Registro exitoso | `/auth/register` | POST | `{username, password}` | `200` | `{username}` | ✅ |
-| **INT-002** | Registro fallido (duplicado) | `/auth/register` | POST | `{username, password}` (duplicado) | `400` | `{message: "Username already taken"}` | ✅ |
-| **INT-003** | Login exitoso | `/auth/login` | POST | `{username, password}` (válidos) | `200` | `{token}` | ✅ |
-| **INT-004** | Login fallido (credenciales inválidas) | `/auth/login` | POST | `{username, password}` (inválidos) | `400` | `{message: "Invalid username or password"}` | ✅ |
-| **INT-005** | Acceso con token | `/auth/dashboard` | GET | Header: `x-auth-token` | `200` | Respuesta exitosa | ✅ |
+| Test ID     | Escenario                              | Endpoint          | Método | Input                              | Expected Status | Expected Response                           | Estado |
+| :---------- | :------------------------------------- | :---------------- | :----- | :--------------------------------- | :-------------- | :------------------------------------------ | :----- |
+| **INT-001** | Registro exitoso                       | `/auth/register`  | POST   | `{username, password}`             | `200`           | `{username}`                                | ✅     |
+| **INT-002** | Registro fallido (duplicado)           | `/auth/register`  | POST   | `{username, password}` (duplicado) | `400`           | `{message: "Username already taken"}`       | ✅     |
+| **INT-003** | Login exitoso                          | `/auth/login`     | POST   | `{username, password}` (válidos)   | `200`           | `{token}`                                   | ✅     |
+| **INT-004** | Login fallido (credenciales inválidas) | `/auth/login`     | POST   | `{username, password}` (inválidos) | `400`           | `{message: "Invalid username or password"}` | ✅     |
+| **INT-005** | Acceso con token                       | `/auth/dashboard` | GET    | Header: `x-auth-token`             | `200`           | Respuesta exitosa                           | ✅     |
+
+---
+
+## 🧪 Pruebas de Integración Interna (Auth Service)
+
+Estas pruebas se ejecutan dentro del servicio **Auth** y se enfocan en la lógica de negocio y la persistencia, aislando la capa HTTP.
+
+### 📁 Ubicación
+
+- **Directorio**: `auth/__tests__/integration/`
+- **Archivo**: `auth-db.test.js`
+- **Herramientas**: `bcryptjs`, `jsonwebtoken`, `mongoose` (MongoDB).
+
+### 🎯 Objetivo de las Pruebas
+
+Validar la **lógica de negocio y seguridad** del **Auth Service**:
+
+- ✅ El _hashing_ de contraseñas con `bcrypt` y el guardado con `Mongoose` funcionan.
+- ✅ La generación y validación del **Token JWT** es correcta.
+- ✅ El servicio maneja errores de persistencia y lógica.
+
+### 📊 Descripción Detallada de Pruebas (auth-db.test.js)
+
+| Test ID          | Escenario                    | Método de Servicio Llamado | Validaciones Clave                                                        | Estado |
+| :--------------- | :--------------------------- | :------------------------- | :------------------------------------------------------------------------ | :----- |
+| **INT-AUTH-001** | Registro Exitoso             | `authService.register`     | ✅ El hash guardado es validable con `bcrypt.compare`.                    | ✅     |
+| **INT-AUTH-004** | Registro Fallido (Duplicado) | `authService.register`     | ✅ Se lanza el error de negocio `"Username already taken"`.               | ✅     |
+| **INT-AUTH-002** | Login Exitoso                | `authService.login`        | ✅ Retorna `{ success: true, token }` y el JWT es válido.                 | ✅     |
+| **INT-AUTH-003** | Login Fallido (Contraseña)   | `authService.login`        | ✅ Retorna `{ success: false, message: "Invalid username or password" }`. | ✅     |
+| **INT-AUTH-005** | Login Fallido (No Existe)    | `authService.login`        | ✅ Retorna `{ success: false, message: "Invalid username or password" }`. | ✅     |
 
 ---
 
@@ -297,13 +345,19 @@ afterEach(async () => {
 ### Prerrequisitos
 
 1. **Servicios en ejecución**:
+
    - API Gateway (puerto 3003)
    - Servicio Auth (puerto 3000)
    - MongoDB para el servicio Auth
 
 2. **Dependencias instaladas**:
+
    ```bash
    cd api-gateway
+   npm install
+
+   cd ..
+   cd auth
    npm install
    ```
 
@@ -321,8 +375,11 @@ docker-compose ps
 # 3. Ejecutar las pruebas de integración
 cd api-gateway
 npm test
-```
 
+cd ..
+cd auth
+npm test:integration
+```
 
 ---
 
@@ -337,13 +394,6 @@ npm test
 - ✅ Se valida la preservación de headers (especialmente `x-auth-token`)
 - ✅ Se verifica el manejo correcto de códigos de estado HTTP
 - ✅ Las pruebas son determinísticas y reproducibles
-
-### Cobertura de Endpoints
-
-- ✅ `/auth/register` - Registro de usuarios
-- ✅ `/auth/login` - Autenticación de usuarios
-- ✅ `/auth/dashboard` - Ruta protegida con token
-- ✅ `/auth/delete-test-users` - Limpieza de datos de prueba
 
 ---
 
@@ -364,6 +414,7 @@ npm test
 ### Limpieza de Datos
 
 Cada prueba limpia los datos de prueba antes y después de ejecutarse usando el endpoint `/auth/delete-test-users`. Esto asegura:
+
 - Independencia entre pruebas
 - No hay efectos secundarios entre ejecuciones
 - Reproducibilidad de resultados
@@ -384,6 +435,9 @@ nodejs-ecommerce-microservice/
 │   └── package.json
 │
 ├── auth/
+│   ├── __tests__/
+│   │   └── integration/
+│   │       └── auth-db.test.js         # Pruebas de integración
 │   ├── src/
 │   │   ├── app.js                      # Servidor Auth
 │   │   ├── controllers/
@@ -400,21 +454,27 @@ nodejs-ecommerce-microservice/
 
 ### Endpoints Probados
 
-| Endpoint | Método | Casos de Prueba | Estado |
-| :-- | :-- | :-- | :-- |
-| `/auth/register` | POST | Registro exitoso, Registro duplicado | ✅ 2 tests |
-| `/auth/login` | POST | Login exitoso, Login fallido | ✅ 2 tests |
-| `/auth/dashboard` | GET | Acceso con token válido | ✅ 1 test |
-| `/auth/delete-test-users` | POST | Limpieza (usado en hooks) | ✅ Implícito |
+| Endpoint                  | Método | Casos de Prueba                      | Estado       |
+| :------------------------ | :----- | :----------------------------------- | :----------- |
+| `/auth/register`          | POST   | Registro exitoso, Registro duplicado | ✅ 2 tests   |
+| `/auth/login`             | POST   | Login exitoso, Login fallido         | ✅ 2 tests   |
+| `/auth/dashboard`         | GET    | Acceso con token válido              | ✅ 1 test    |
+| `/auth/delete-test-users` | POST   | Limpieza (usado en hooks)            | ✅ Implícito |
 
-**Total**: 5 pruebas de integración implementadas
+| Área de Cobertura                                  | Prueba de Integración  |
+| :------------------------------------------------- | :--------------------- |
+| **Flujo Completo HTTP** (Gateway, Enrutamiento)    | `gateway-auth.test.js` |
+| **Persistencia (DB)** y Hashing                    | `auth-db.test.js`      |
+| **Lógica de Seguridad** (JWT, Comparación de Hash) | `auth-db.test.js`      |
+
+**Total**: 10 pruebas de integración implementadas
 
 ---
 
 ## 📚 Referencias
 
 - **Laboratorio Original**: Laboratory 2 - Integration Testing (SQ_2025ii)
-- **Herramientas**: 
+- **Herramientas**:
   - Jest (framework de testing)
   - Axios (cliente HTTP)
   - Express (servidor API Gateway)
