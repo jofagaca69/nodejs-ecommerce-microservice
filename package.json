@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "dotenv": "^16.0.3",
+    "jest": "^30.2.0",
     "jsonwebtoken": "^9.0.0",
     "wait-on": "^7.0.1"
   }
