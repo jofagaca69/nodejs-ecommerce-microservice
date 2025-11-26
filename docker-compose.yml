@@ -140,6 +140,23 @@ services:
     networks:
       - ecommerce
     command: ["npm", "run", "test:db"]
+  
+  order-integration-tests:
+    build: ./order
+    volumes:
+      - ./order/__tests__:/app/__tests__
+      - ./order/src:/app/src
+    depends_on:
+      mongodb-order:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - MONGODB_ORDER_URI=mongodb://mongodb-order:27017/orders
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    networks:
+      - ecommerce
+    command: ["npm", "run", "test:integration"]
 
 networks:
   ecommerce:
