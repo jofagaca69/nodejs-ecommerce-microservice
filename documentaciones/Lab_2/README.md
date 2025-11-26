@@ -4,7 +4,7 @@
 
 ## 📋 Objetivo
 
-Este laboratorio implementa las pruebas de integración para el **API Gateway** y el **Servicio de Autenticación (Auth)**. Verificamos tanto la **comunicación externa (HTTP)** a través del _Gateway_ como la **integración interna** del servicio con su base de datos **MongoDB**.
+Este laboratorio implementa las pruebas de integración para el **API Gateway**, el **Servicio de Autenticación (Auth)**, y el **Servicio de Órdenes (Order)**. Verificamos tanto la **comunicación externa (HTTP)** a través del _Gateway_ como la **integración interna** de los servicios con su respectiva base de datos **MongoDB**.
 
 ## 🏗️ Arquitectura del Sistema
 
@@ -421,6 +421,137 @@ Cada prueba limpia los datos de prueba antes y después de ejecutarse usando el 
 
 ---
 
+## 🧪 Pruebas de Integración - Order Service (Backend ↔ Database)
+
+### 📁 Ubicación
+
+- **Directorio**: `order/__tests__/integration/`
+- **Archivo**: `order-db.test.js`
+- **Framework**: Jest
+- **Base de Datos**: MongoDB (puerto 27018 - Docker) 
+- **ODM**: Mongoose
+
+### 🎯 Objetivo de las Pruebas
+
+Validar la **integración entre el Backend del Order Service y MongoDB**:
+
+- ✅ Persistencia correcta de órdenes en la base de datos
+- ✅ Cálculo y almacenamiento del precio total
+- ✅ Validación del esquema de datos en MongoDB
+- ✅ Manejo de casos límite (productos vacíos, datos inválidos)
+- ✅ Operaciones CRUD completas (Create, Read, Update, Delete)
+- ✅ Consultas con múltiples documentos
+
+---
+
+### 📊 Tabla de Diseño de Pruebas de Integración - Order Service
+
+| Test ID          | Escenario                                    | Operación DB  | Validaciones Clave                                                                          | Estado |
+| :--------------- | :------------------------------------------- | :------------ | :------------------------------------------------------------------------------------------ | :----- |
+| **ORDER-INT-001** | Crear y persistir orden                      | `save()`      | ✅ Orden existe en DB<br>✅ `user` correcto<br>✅ 2 productos<br>✅ `totalPrice` correcto   | ✅     |
+| **ORDER-INT-002** | Calcular precio total                        | `save()`      | ✅ `totalPrice` = suma de precios (36.50)                                                   | ✅     |
+| **ORDER-INT-003** | Validar esquema MongoDB                      | `save()`, `lean()` | ✅ Tiene `_id`, `user`, `products`, `totalPrice`, `createdAt`<br>✅ Tipos correctos         | ✅     |
+| **ORDER-INT-004** | Manejar productos vacíos                     | `save()`      | ✅ Orden guardada<br>✅ `products` array vacío<br>✅ `totalPrice = 0`                       | ✅     |
+| **ORDER-INT-005** | Rechazar orden sin campo `user`              | `save()`      | ✅ Lanza error de validación                                                                | ✅     |
+| **ORDER-INT-006** | Rechazar orden con `totalPrice` negativo     | `save()`      | ✅ Lanza error de validación (`min: 0`)                                                     | ✅     |
+| **ORDER-INT-007** | Actualizar orden existente                   | `save()` (2x) | ✅ `totalPrice` actualizado<br>✅ Producto agregado al array                                | ✅     |
+| **ORDER-INT-008** | Eliminar orden                               | `deleteOne()` | ✅ Orden eliminada de DB<br>✅ `findOne()` retorna `null`                                   | ✅     |
+| **ORDER-INT-009** | Consultar múltiples órdenes del mismo usuario| `find()`      | ✅ Retorna 3 órdenes<br>✅ Suma total de precios = 225                                      | ✅     |
+
+**Total**: 9 pruebas de integración Backend ↔ Database
+
+---
+
+### 🚀 Ejecutar Pruebas de Order Service
+
+#### Prerrequisitos
+
+1. **MongoDB corriendo** (puerto 27018):
+   ```bash
+   docker-compose up -d mongodb-order
+   ```
+
+2. **Dependencias instaladas**:
+   ```bash
+   cd order
+   npm install
+   ```
+
+#### Ejecución Local
+
+```bash
+# 1. Asegurar que MongoDB Order está corriendo
+docker ps --filter "name=mongodb-order"
+
+# 2. Ejecutar pruebas
+cd order
+npm run test:integration
+```
+
+#### Resultado Esperado
+
+```
+ PASS  __tests__/integration/order-db.test.js
+  Order Service <--> MongoDB Integration Tests
+    ✓ ORDER-INT-001: Debe crear y persistir una orden en MongoDB (25 ms)
+    ✓ ORDER-INT-002: Debe calcular y persistir correctamente el precio total (7 ms)
+    ✓ ORDER-INT-003: Debe validar el esquema correcto en MongoDB (8 ms)
+    ✓ ORDER-INT-004: Debe manejar órdenes con productos vacíos (6 ms)
+    ✓ ORDER-INT-005: Debe rechazar órdenes sin campo user requerido (7 ms)
+    ✓ ORDER-INT-006: Debe rechazar órdenes con totalPrice negativo (3 ms)
+    ✓ ORDER-INT-007: Debe actualizar una orden existente (17 ms)
+    ✓ ORDER-INT-008: Debe eliminar una orden de la base de datos (6 ms)
+    ✓ ORDER-INT-009: Debe consultar múltiples órdenes del mismo usuario (11 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+```
+
+---
+
+### ✅ Criterios de Éxito - Order Service
+
+- ✅ **Aislamiento**: Cada prueba limpia datos antes y después (`afterEach`)
+- ✅ **Integración Real**: Usa MongoDB real (no mocks)
+- ✅ **Flujo Completo**: Valida Backend → MongoDB → Backend
+- ✅ **Validación de Datos**: Verifica estructura de documentos en MongoDB
+- ✅ **Manejo de Errores**: Prueba casos límite y validaciones del esquema
+- ✅ **Reproducibilidad**: Tests determinísticos y repetibles
+- ✅ **Operaciones CRUD**: Cubre Create, Read, Update, Delete
+
+
+### 📚 Modelo de Datos - Order
+
+```javascript
+const orderSchema = new mongoose.Schema({
+  products: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'products',
+    required: true,
+  }],
+  user: {
+    type: String,
+    required: true,
+  },
+  totalPrice: {
+    type: Number,
+    required: true,
+    min: 0,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+}, { collection : 'orders' });
+```
+
+**Campos**:
+- `products`: Array de ObjectIds que referencian productos
+- `user`: String con el username del usuario que hizo la orden
+- `totalPrice`: Number con validación `min: 0`
+- `createdAt`: Date generado automáticamente
+
+---
 ## 📚 Estructura del Proyecto
 
 ```
@@ -429,7 +560,7 @@ nodejs-ecommerce-microservice/
 ├── api-gateway/
 │   ├── __tests__/
 │   │   └── integration/
-│   │       └── gateway-auth.test.js    # Pruebas de integración
+│   │       └── gateway-auth.test.js    # Pruebas de integración Gateway ↔ Auth
 │   ├── jest.config.js                  # Configuración de Jest
 │   ├── index.js                        # Servidor API Gateway
 │   └── package.json
@@ -437,11 +568,41 @@ nodejs-ecommerce-microservice/
 ├── auth/
 │   ├── __tests__/
 │   │   └── integration/
-│   │       └── auth-db.test.js         # Pruebas de integración
+│   │       └── auth-db.test.js         # Pruebas de integración Auth ↔ MongoDB
 │   ├── src/
 │   │   ├── app.js                      # Servidor Auth
 │   │   ├── controllers/
 │   │   │   └── authController.js       # Controladores
+│   │   ├── services/
+│   │   │   └── authService.js          # Lógica de negocio
+│   │   ├── repositories/
+│   │   │   └── userRepository.js       # Acceso a datos
+│   │   ├── models/
+│   │   │   └── user.js                 # Modelo de Usuario
+│   │   └── middlewares/
+│   │       └── authMiddleware.js       # Middleware de autenticación
+│   └── package.json
+│
+├── order/
+│   ├── __tests__/
+│   │   └── integration/
+│   │       ├── order-db.test.js        # Pruebas de integración Order ↔ MongoDB  
+│   ├── src/
+│   │   ├── app.js                      # Servidor Order + RabbitMQ Consumer
+│   │   ├── models/
+│   │   │   └── order.js                # Modelo de Orden
+│   │   ├── config.js                   # Configuración
+│   │   └── utils/
+│   │       ├── isAuthenticated.js      # Middleware de autenticación
+│   │       └── messageBroker.js        # Utilidades RabbitMQ
+│   ├── jest.config.js                  # Configuración de Jest
+│   └── package.json
+│
+├── product/
+│   ├── src/
+│   │   ├── app.js                      # Servidor Product
+│   │   ├── models/
+│   │   │   └── product.js              # Modelo de Producto
 │   │   └── ...
 │   └── package.json
 │
@@ -452,7 +613,19 @@ nodejs-ecommerce-microservice/
 
 ## 🔍 Análisis de Cobertura
 
-### Endpoints Probados
+### Servicios con Pruebas de Integración
+
+| Servicio       | Tipo de Integración   | Archivo de Pruebas          | Tests Implementados |
+| :------------- | :-------------------- | :-------------------------- | :------------------ |
+| **API Gateway**| Gateway ↔ Auth        | `gateway-auth.test.js`      | 5 tests ✅          |
+| **Auth**       | Backend ↔ MongoDB     | `auth-db.test.js`           | 5 tests ✅          |
+| **Order**      | Backend ↔ MongoDB     | `order-db.test.js`          | 9 tests ✅          |
+
+**Total**: **19 pruebas de integración** implementadas
+
+---
+
+### Endpoints Probados (Auth Service)
 
 | Endpoint                  | Método | Casos de Prueba                      | Estado       |
 | :------------------------ | :----- | :----------------------------------- | :----------- |
@@ -461,13 +634,36 @@ nodejs-ecommerce-microservice/
 | `/auth/dashboard`         | GET    | Acceso con token válido              | ✅ 1 test    |
 | `/auth/delete-test-users` | POST   | Limpieza (usado en hooks)            | ✅ Implícito |
 
-| Área de Cobertura                                  | Prueba de Integración  |
-| :------------------------------------------------- | :--------------------- |
-| **Flujo Completo HTTP** (Gateway, Enrutamiento)    | `gateway-auth.test.js` |
-| **Persistencia (DB)** y Hashing                    | `auth-db.test.js`      |
-| **Lógica de Seguridad** (JWT, Comparación de Hash) | `auth-db.test.js`      |
+---
 
-**Total**: 10 pruebas de integración implementadas
+### Operaciones Probadas (Order Service)
+
+| Operación                | Método Mongoose | Casos de Prueba                                      | Estado     |
+| :----------------------- | :-------------- | :--------------------------------------------------- | :--------- |
+| **Create** (Persistencia)| `save()`        | Crear orden, Productos vacíos                        | ✅ 2 tests |
+| **Read** (Consultas)     | `findOne()`, `find()` | Consultar orden, Múltiples órdenes                   | ✅ 2 tests |
+| **Update** (Modificación)| `save()`        | Actualizar orden existente                           | ✅ 1 test  |
+| **Delete** (Eliminación) | `deleteOne()`   | Eliminar orden                                       | ✅ 1 test  |
+| **Validaciones**         | `save()`        | Rechazar sin user, Precio negativo, Validar esquema  | ✅ 3 tests |
+
+---
+
+### Cobertura por Área
+
+| Área de Cobertura                                  | Servicio | Prueba de Integración  |
+| :------------------------------------------------- | :------- | :--------------------- |
+| **Flujo Completo HTTP** (Gateway, Enrutamiento)    | Auth     | `gateway-auth.test.js` |
+| **Persistencia (DB)** y Hashing                    | Auth     | `auth-db.test.js`      |
+| **Lógica de Seguridad** (JWT, Comparación de Hash) | Auth     | `auth-db.test.js`      |
+| **Operaciones CRUD en MongoDB**                    | Order    | `order-db.test.js`     |
+| **Validaciones de Esquema**                        | Order    | `order-db.test.js`     |
+
+---
+
+**Total acumulado**: 19 pruebas de integración
+
+- Auth Service: 10 pruebas (5 gateway + 5 backend-db)
+- Order Service: 9 pruebas (backend-db)
 
 ---
 
