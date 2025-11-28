@@ -552,6 +552,46 @@ const orderSchema = new mongoose.Schema({
 - `createdAt`: Date generado automáticamente
 
 ---
+
+## 🧪 Pruebas de Integración - Product Service (Backend ↔ Database)
+
+### 📁 Ubicación
+
+- **Directorio**: `product/__tests__/integration/`
+- **Archivo**: `product-db.test.js`
+- **Framework**: Jest
+- **Base de Datos**: MongoDB (puerto 27019 - Docker)
+
+### 🎯 Objetivo
+
+Validar la integración entre el Backend del Product Service y MongoDB: persistencia, validación de esquema, operaciones CRUD y manejo de campos requeridos/opcionales.
+
+### 📊 Resumen de Tests
+
+| Test ID | Escenario | Estado |
+|---------|-----------|--------|
+| **PROD-INT-001** | Crear y persistir producto | ✅ |
+| **PROD-INT-002** | Validar esquema MongoDB | ✅ |
+| **PROD-INT-003** | Rechazar sin campo `name` | ✅ |
+| **PROD-INT-004** | Rechazar sin campo `price` | ✅ |
+| **PROD-INT-005** | Manejar `description` opcional | ✅ |
+| **PROD-INT-006** | Actualizar producto | ✅ |
+| **PROD-INT-007** | Eliminar producto | ✅ |
+| **PROD-INT-008** | Consultar múltiples productos | ✅ |
+| **PROD-INT-009** | Buscar por ID | ✅ |
+
+**Total**: 9 pruebas de integración Backend ↔ Database
+
+### 🚀 Ejecutar
+
+```bash
+cd product
+npm run test:integration
+```
+
+**Resultado**: ✅ 9 tests pasando
+
+---
 ## 📚 Estructura del Proyecto
 
 ```
@@ -599,11 +639,15 @@ nodejs-ecommerce-microservice/
 │   └── package.json
 │
 ├── product/
+│   ├── __tests__/
+│   │   └── integration/
+│   │       └── product-db.test.js      # Pruebas de integración Product ↔ MongoDB
 │   ├── src/
 │   │   ├── app.js                      # Servidor Product
 │   │   ├── models/
 │   │   │   └── product.js              # Modelo de Producto
 │   │   └── ...
+│   ├── jest.config.js                  # Configuración de Jest
 │   └── package.json
 │
 └── docker-compose.yml                  # Orquestación de servicios
@@ -620,8 +664,9 @@ nodejs-ecommerce-microservice/
 | **API Gateway**| Gateway ↔ Auth        | `gateway-auth.test.js`      | 5 tests ✅          |
 | **Auth**       | Backend ↔ MongoDB     | `auth-db.test.js`           | 5 tests ✅          |
 | **Order**      | Backend ↔ MongoDB     | `order-db.test.js`          | 9 tests ✅          |
+| **Product**    | Backend ↔ MongoDB     | `product-db.test.js`        | 9 tests ✅          |
 
-**Total**: **19 pruebas de integración** implementadas
+**Total**: **28 pruebas de integración** implementadas
 
 ---
 
@@ -657,13 +702,16 @@ nodejs-ecommerce-microservice/
 | **Lógica de Seguridad** (JWT, Comparación de Hash) | Auth     | `auth-db.test.js`      |
 | **Operaciones CRUD en MongoDB**                    | Order    | `order-db.test.js`     |
 | **Validaciones de Esquema**                        | Order    | `order-db.test.js`     |
+| **Operaciones CRUD en MongoDB**                    | Product  | `product-db.test.js`   |
+| **Validaciones de Esquema**                        | Product  | `product-db.test.js`   |
 
 ---
 
-**Total acumulado**: 19 pruebas de integración
+**Total acumulado**: 28 pruebas de integración
 
 - Auth Service: 10 pruebas (5 gateway + 5 backend-db)
 - Order Service: 9 pruebas (backend-db)
+- Product Service: 9 pruebas (backend-db)
 
 ---
 
