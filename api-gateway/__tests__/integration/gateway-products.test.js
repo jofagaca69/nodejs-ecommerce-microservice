@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const gatewayUrl = "http://localhost:3003";
+const gatewayUrl = process.env.GATEWAY_URL || "http://localhost:3003";
 
 describe("Gateway <--> Product microservice integration", () => {
   let authToken;
