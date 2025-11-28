@@ -140,7 +140,7 @@ services:
     networks:
       - ecommerce
     command: ["npm", "run", "test:db"]
-  
+
   order-integration-tests:
     build: ./order
     volumes:
@@ -157,6 +157,29 @@ services:
     networks:
       - ecommerce
     command: ["npm", "run", "test:integration"]
+
+  gateway-products-integration-tests:
+    build: ./api-gateway
+    volumes:
+      - ./api-gateway/__tests__:/app/__tests__
+    depends_on:
+      mongodb-auth:
+        condition: service_healthy
+      mongodb-product:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      auth:
+        condition: service_started
+      product:
+        condition: service_started
+      api-gateway:
+        condition: service_started
+    environment:
+      - GATEWAY_URL=http://api-gateway:3003
+    networks:
+      - ecommerce
+    command: ["npm", "test", "--", "gateway-products.test.js"]
 
 networks:
   ecommerce:
