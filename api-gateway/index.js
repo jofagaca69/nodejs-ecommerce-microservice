@@ -1,8 +1,17 @@
 const express = require("express");
 const httpProxy = require("http-proxy");
+const cors = require("cors");
 
 const proxy = httpProxy.createProxyServer();
 const app = express();
+
+const corsOptions = {
+  origin: "*",
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
 
 // Route for root path
 app.get("/", (req, res) => {
@@ -13,8 +22,8 @@ app.get("/", (req, res) => {
     endpoints: {
       auth: "/auth",
       products: "/products",
-      orders: "/orders"
-    }
+      orders: "/orders",
+    },
   });
 });
 
@@ -35,6 +44,7 @@ app.use("/orders", (req, res) => {
 
 // Start the server
 const port = process.env.PORT || 3003;
+
 app.listen(port, () => {
   console.log(`API Gateway listening on port ${port}`);
 });
