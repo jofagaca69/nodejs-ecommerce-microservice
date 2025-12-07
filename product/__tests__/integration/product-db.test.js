@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const Product = require("../../src/models/product");
+const Category = require("../../src/models/category");
 
 // URI para tests locales (puerto 27019 según docker-compose)
 const MONGODB_TEST_URI = process.env.MONGODB_PRODUCT_URI || "mongodb://localhost:27019/products";
@@ -12,6 +13,18 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
     });
+  });
+
+  beforeEach(async () => {
+    // Limpiar categorías de prueba antes de cada test
+    await Category.deleteMany({ name: /^testcategory/ })
+
+    testCategory = new Category({
+      name: "testcategory_default",
+      description: "Category for tests"
+    })
+
+    await testCategory.save()
   });
 
   afterEach(async () => {
@@ -28,7 +41,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     const productData = {
       name: "testproduct_laptop",
       price: 1299.99,
-      description: "High-performance gaming laptop"
+      description: "High-performance gaming laptop",
+      stock: 10,
+      categories: [testCategory._id]
     };
 
     // Act: Crear y guardar el producto directamente
@@ -37,7 +52,7 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
 
     // Assert: Verificar que el producto existe en MongoDB
     const productInDb = await Product.findOne({ name: productData.name });
-    
+
     expect(productInDb).not.toBeNull();
     expect(productInDb.name).toBe(productData.name);
     expect(productInDb.price).toBe(productData.price);
@@ -49,7 +64,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     const productData = {
       name: "testproduct_keyboard",
       price: 89.99,
-      description: "Mechanical keyboard"
+      description: "Mechanical keyboard",
+      stock: 10,
+      categories: [testCategory._id]
     };
 
     // Act
@@ -58,7 +75,7 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
 
     // Assert
     const product = await Product.findOne({ name: productData.name }).lean();
-    
+
     expect(product).toHaveProperty("_id");
     expect(product).toHaveProperty("name");
     expect(product).toHaveProperty("price");
@@ -72,7 +89,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     // Arrange
     const productData = {
       price: 50.00,
-      description: "Product without name"
+      description: "Product without name",
+      stock: 10,
+      categories: [testCategory._id]
       // name no está definido a propósito
     };
 
@@ -85,7 +104,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     // Arrange
     const productData = {
       name: "testproduct_no_price",
-      description: "Product without price"
+      description: "Product without price",
+      stock: 10,
+      categories: [testCategory._id]
       // price no está definido a propósito
     };
 
@@ -98,7 +119,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     // Arrange
     const productData = {
       name: "testproduct_no_desc",
-      price: 25.99
+      price: 25.99,
+      stock: 10,
+      categories: [testCategory._id]
       // description no está definido (es opcional)
     };
 
@@ -108,7 +131,7 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
 
     // Assert
     const product = await Product.findOne({ name: productData.name });
-    
+
     expect(product).not.toBeNull();
     expect(product.name).toBe(productData.name);
     expect(product.price).toBe(productData.price);
@@ -120,7 +143,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     const initialProduct = new Product({
       name: "testproduct_update",
       price: 100.00,
-      description: "Initial description"
+      description: "Initial description",
+      stock: 10,
+      categories: [testCategory._id]
     });
     await initialProduct.save();
 
@@ -140,7 +165,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     const productData = {
       name: "testproduct_delete",
       price: 75.50,
-      description: "Product to be deleted"
+      description: "Product to be deleted",
+      stock: 10,
+      categories: [testCategory._id]
     };
     const newProduct = new Product(productData);
     await newProduct.save();
@@ -156,9 +183,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
   it("PROD-INT-008: Debe consultar múltiples productos", async () => {
     // Arrange: Crear múltiples productos
     const products = [
-      { name: "testproduct_multi_1", price: 50.00, description: "Product 1" },
-      { name: "testproduct_multi_2", price: 75.00, description: "Product 2" },
-      { name: "testproduct_multi_3", price: 100.00, description: "Product 3" }
+      { name: "testproduct_multi_1", price: 50.00, description: "Product 1", stock: 10, categories: [testCategory._id] },
+      { name: "testproduct_multi_2", price: 75.00, description: "Product 2", stock: 10, categories: [testCategory._id] },
+      { name: "testproduct_multi_3", price: 100.00, description: "Product 3", stock: 10, categories: [testCategory._id] }
     ];
 
     for (const productData of products) {
@@ -180,7 +207,9 @@ describe("Product Service <--> MongoDB Integration Tests", () => {
     const productData = {
       name: "testproduct_findbyid",
       price: 199.99,
-      description: "Product to find by ID"
+      description: "Product to find by ID",
+      stock: 10,
+      categories: [testCategory._id]
     };
     const newProduct = new Product(productData);
     await newProduct.save();

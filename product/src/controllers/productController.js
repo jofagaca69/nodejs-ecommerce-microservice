@@ -2,6 +2,10 @@ const Product = require("../models/product");
 const messageBroker = require("../utils/messageBroker");
 const uuid = require('uuid');
 
+const ProductsService = require("../services/productsService");
+
+const productsService = new ProductsService();
+
 /**
  * Class to hold the API implementation for the product services
  */
@@ -111,6 +115,18 @@ class ProductController {
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Server error" });
+    }
+  }
+
+  async deleteTestProducts(req, res) {
+    try {
+      const result = await productsService.deleteTestProducts();
+      return res.status(200).json({
+        message: `${result.deletedCount} productos de prueba eliminados`
+      });
+    } catch (error) {
+      console.error(error);
+      return res.status(500).json({ message: "Error al eliminar productos de prueba" });
     }
   }
 }

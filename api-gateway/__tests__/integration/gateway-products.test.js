@@ -5,6 +5,7 @@ const gatewayUrl = process.env.GATEWAY_URL || "http://localhost:3003";
 describe("Gateway <--> Product microservice integration", () => {
   let authToken;
   let testProductIds = [];
+  let testCategoryId;
 
   beforeAll(async () => {
     const user = {
@@ -20,6 +21,13 @@ describe("Gateway <--> Product microservice integration", () => {
 
     const loginResponse = await axios.post(`${gatewayUrl}/auth/login`, user);
     authToken = loginResponse.data.token;
+
+    const categoryResponse = await axios.post(
+      `${gatewayUrl}/products/api/categories`,
+      { name: `testcategory_${Date.now()}`, description: "test" },
+      { headers: { Authorization: `Bearer ${authToken}` } }
+    );
+    testCategoryId = categoryResponse.data._id;
   });
 
   afterEach(async () => {
@@ -32,13 +40,25 @@ describe("Gateway <--> Product microservice integration", () => {
     } catch (error) {
       // Ignorar errores de limpieza
     }
+    try {
+      await axios.delete(`${gatewayUrl}/products/api/categories/test-categories`);
+    } catch (error) {
+      // Ignorar errores de limpieza
+    }
+    try {
+      await axios.delete(`${gatewayUrl}/products/api/products/test-products`);
+    } catch (error) {
+      // Ignorar errores de limpieza
+    }
   });
 
   it("PROD-INT-001: Debe crear un producto exitosamente con todos los campos", async () => {
     const product = {
       name: "Laptop Test",
       description: "Laptop de prueba para testing",
-      price: 1299.99
+      price: 1299.99,
+      stock: 10,
+      categories: [testCategoryId]
     };
 
     const response = await axios.post(
@@ -52,6 +72,8 @@ describe("Gateway <--> Product microservice integration", () => {
     expect(response.data.name).toBe(product.name);
     expect(response.data.description).toBe(product.description);
     expect(response.data.price).toBe(product.price);
+    expect(response.data.stock).toBe(product.stock);
+    expect(response.data.categories).toStrictEqual(product.categories);
 
     testProductIds.push(response.data._id);
   });
@@ -60,7 +82,9 @@ describe("Gateway <--> Product microservice integration", () => {
     const product = {
       name: "Producto Sin Auth",
       description: "Este debe fallar",
-      price: 99.99
+      price: 99.99,
+      stock: 10,
+      categories: [testCategoryId]
     };
 
     const err = await axios
@@ -75,7 +99,9 @@ describe("Gateway <--> Product microservice integration", () => {
     const product = {
       name: "Producto para Listar",
       description: "Test",
-      price: 50.00
+      price: 50.00,
+      stock: 10,
+      categories: [testCategoryId]
     };
 
     await axios.post(
@@ -94,10 +120,13 @@ describe("Gateway <--> Product microservice integration", () => {
     expect(response.data.length).toBeGreaterThan(0);
 
     const firstProduct = response.data[0];
+    console.log(response.data)
     expect(firstProduct).toHaveProperty("_id");
     expect(firstProduct).toHaveProperty("name");
     expect(firstProduct).toHaveProperty("price");
     expect(firstProduct).toHaveProperty("description");
+    expect(firstProduct).toHaveProperty("stock");
+    expect(firstProduct).toHaveProperty("categories");
   });
 
   it("PROD-INT-004: Debe rechazar listado de productos sin token de autenticación", async () => {
@@ -128,9 +157,9 @@ describe("Gateway <--> Product microservice integration", () => {
 
   it("PROD-INT-006: Debe crear múltiples productos secuencialmente", async () => {
     const products = [
-      { name: "Mouse", description: "Mouse inalámbrico", price: 25.00 },
-      { name: "Teclado", description: "Teclado mecánico", price: 75.00 },
-      { name: "Monitor", description: "Monitor 24 pulgadas", price: 200.00 }
+      { name: "Mouse", description: "Mouse inalámbrico", price: 25.00, stock: 10, categories: [testCategoryId] },
+      { name: "Teclado", description: "Teclado mecánico", price: 75.00, stock: 10, categories: [testCategoryId] },
+      { name: "Monitor", description: "Monitor 24 pulgadas", price: 200.00, stock: 10, categories: [testCategoryId] }
     ];
 
     for (const product of products) {
@@ -155,7 +184,9 @@ describe("Gateway <--> Product microservice integration", () => {
     const product = {
       name: "Producto Verificación",
       description: "Test de estructura de respuesta",
-      price: 45.00
+      price: 45.00,
+      stock: 10,
+      categories: [testCategoryId]
     };
 
     const response = await axios.post(
@@ -169,6 +200,8 @@ describe("Gateway <--> Product microservice integration", () => {
     expect(response.data).toHaveProperty("name", product.name);
     expect(response.data).toHaveProperty("description", product.description);
     expect(response.data).toHaveProperty("price", product.price);
+    expect(response.data).toHaveProperty("stock", product.stock);
+    expect(response.data).toHaveProperty("categories", product.categories);
     expect(typeof response.data._id).toBe("string");
     expect(response.data._id.length).toBeGreaterThan(0);
   });
