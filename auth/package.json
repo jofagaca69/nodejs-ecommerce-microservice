@@ -9,6 +9,7 @@
     "test:db:insert": "node src/db-tests/test_insert.js",
     "test:db:select": "node src/db-tests/test_select.js",
     "test:db:constraints": "node src/db-tests/test_constraints.js",
+    "test:integration": "jest --runInBand __tests__/integration",
     "start": "node index.js"
   },
   "keywords": [],
@@ -21,6 +22,7 @@
     "mongoose": "^7.0.0"
   },
   "devDependencies": {
+    "jest": "^30.2.0",
     "dotenv": "^16.0.3",
     "mongodb": "^6.0.0"
   }
