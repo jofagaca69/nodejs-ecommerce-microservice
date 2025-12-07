@@ -32,6 +32,10 @@ class ProductController {
       res.status(201).json(product);
     } catch (error) {
       console.error(error);
+      // Si es un error de validación de Mongoose, retornar 400
+      if (error.name === 'ValidationError') {
+        return res.status(400).json({ message: error.message });
+      }
       res.status(500).json({ message: "Server error" });
     }
   }
@@ -42,17 +46,17 @@ class ProductController {
       if (!token) {
         return res.status(401).json({ message: "Unauthorized" });
       }
-  
+
       const { ids } = req.body;
       const products = await Product.find({ _id: { $in: ids } });
-  
+
       const orderId = uuid.v4(); // Generate a unique order ID
-      this.ordersMap.set(orderId, { 
-        status: "pending", 
-        products, 
+      this.ordersMap.set(orderId, {
+        status: "pending",
+        products,
         username: req.user.username
       });
-  
+
       await messageBroker.publishMessage("orders", {
         products,
         username: req.user.username,
@@ -69,14 +73,14 @@ class ProductController {
           console.log("Updated order:", order);
         }
       });
-  
+
       // Long polling until order is completed
       let order = this.ordersMap.get(orderId);
       while (order.status !== 'completed') {
         await new Promise(resolve => setTimeout(resolve, 1000)); // wait for 1 second before checking status again
         order = this.ordersMap.get(orderId);
       }
-  
+
       // Once the order is marked as completed, return the complete order details
       return res.status(201).json(order);
     } catch (error) {
@@ -84,7 +88,7 @@ class ProductController {
       res.status(500).json({ message: "Server error" });
     }
   }
-  
+
 
   async getOrderStatus(req, res, next) {
     const { orderId } = req.params;

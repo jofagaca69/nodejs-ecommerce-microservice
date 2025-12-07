@@ -273,3 +273,144 @@ npm run test:unit
 - ✅ Cobertura completa de la capa de servicio
 - ✅ Aislamiento total (sin MongoDB)
 
+---
+
+## 🧪 Pruebas de Integración - Product Service (Backend ↔ Database)
+
+### 📁 Ubicación
+
+- **Directorio**: `product/__tests__/integration/`
+- **Archivo**: `product-db.test.js`
+- **Framework**: Jest
+- **Base de Datos**: MongoDB (puerto 27019 - Docker)
+- **ODM**: Mongoose
+
+### 🎯 Objetivo de las Pruebas
+
+Validar la **integración entre el Backend del Product Service y MongoDB**:
+
+- ✅ Persistencia correcta de productos en la base de datos
+- ✅ Validación del esquema de datos en MongoDB
+- ✅ Manejo de campos requeridos y opcionales
+- ✅ Operaciones CRUD completas (Create, Read, Update, Delete)
+- ✅ Consultas con múltiples documentos
+
+---
+
+### 📊 Tabla de Diseño de Pruebas de Integración - Product Service
+
+| Test ID          | Escenario                                    | Operación DB  | Validaciones Clave                                                                          | Estado |
+| :--------------- | :------------------------------------------- | :------------ | :------------------------------------------------------------------------------------------ | :----- |
+| **PROD-INT-001** | Crear y persistir producto                   | `save()`      | ✅ Producto existe en DB<br>✅ `name`, `price`, `description` correctos                     | ✅     |
+| **PROD-INT-002** | Validar esquema MongoDB                      | `save()`, `lean()` | ✅ Tiene `_id`, `name`, `price`, `description`<br>✅ Tipos correctos                         | ✅     |
+| **PROD-INT-003** | Rechazar producto sin campo `name`           | `save()`      | ✅ Lanza error de validación                                                                | ✅     |
+| **PROD-INT-004** | Rechazar producto sin campo `price`         | `save()`      | ✅ Lanza error de validación                                                                | ✅     |
+| **PROD-INT-005** | Manejar `description` opcional               | `save()`      | ✅ Producto guardado sin description<br>✅ Campo opcional funciona correctamente             | ✅     |
+| **PROD-INT-006** | Actualizar producto existente                | `save()` (2x) | ✅ `price` y `description` actualizados correctamente                                       | ✅     |
+| **PROD-INT-007** | Eliminar producto                            | `deleteOne()` | ✅ Producto eliminado de DB<br>✅ `findOne()` retorna `null`                                 | ✅     |
+| **PROD-INT-008** | Consultar múltiples productos                | `find()`      | ✅ Retorna 3 productos<br>✅ Suma total de precios = 225                                    | ✅     |
+| **PROD-INT-009** | Buscar producto por ID                       | `findById()`  | ✅ Retorna producto correcto<br>✅ ID coincide                                              | ✅     |
+
+**Total**: 9 pruebas de integración Backend ↔ Database
+
+---
+
+### 🚀 Ejecutar Pruebas de Integración
+
+#### Prerrequisitos
+
+1. **MongoDB corriendo** (puerto 27019):
+   ```bash
+   docker-compose up -d mongodb-product
+   ```
+
+2. **Dependencias instaladas**:
+   ```bash
+   cd product
+   npm install
+   ```
+
+#### Ejecución Local
+
+```bash
+# 1. Asegurar que MongoDB Product está corriendo
+docker ps --filter "name=mongodb-product"
+
+# 2. Ejecutar pruebas
+cd product
+npm run test:integration
+```
+
+#### Resultado Esperado
+
+```
+PASS  __tests__/integration/product-db.test.js
+  Product Service <--> MongoDB Integration Tests
+    ✓ PROD-INT-001: Debe crear y persistir un producto en MongoDB
+    ✓ PROD-INT-002: Debe validar el esquema correcto en MongoDB
+    ✓ PROD-INT-003: Debe rechazar productos sin campo name requerido
+    ✓ PROD-INT-004: Debe rechazar productos sin campo price requerido
+    ✓ PROD-INT-005: Debe manejar productos sin description (campo opcional)
+    ✓ PROD-INT-006: Debe actualizar un producto existente
+    ✓ PROD-INT-007: Debe eliminar un producto de la base de datos
+    ✓ PROD-INT-008: Debe consultar múltiples productos
+    ✓ PROD-INT-009: Debe buscar un producto por ID
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+```
+
+---
+
+### ✅ Criterios de Éxito - Product Service (Integración)
+
+- ✅ **Aislamiento**: Cada prueba limpia datos antes y después (`afterEach`)
+- ✅ **Integración Real**: Usa MongoDB real (no mocks)
+- ✅ **Flujo Completo**: Valida Backend → MongoDB → Backend
+- ✅ **Validación de Datos**: Verifica estructura de documentos en MongoDB
+- ✅ **Manejo de Errores**: Prueba casos límite y validaciones del esquema
+- ✅ **Reproducibilidad**: Tests determinísticos y repetibles
+- ✅ **Operaciones CRUD**: Cubre Create, Read, Update, Delete
+
+### 📚 Modelo de Datos - Product
+
+```javascript
+const productSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  description: { type: String },
+}, { collection: 'products' });
+```
+
+**Campos**:
+- `name`: String requerido
+- `price`: Number requerido
+- `description`: String opcional
+
+---
+
+### ✅ Implementación Completada - Tests de Integración
+
+1. ✅ **Tests de integración** implementados en `product/__tests__/integration/product-db.test.js`
+   - 9 tests cubriendo operaciones CRUD y validaciones
+   - Uso de MongoDB real para validar persistencia
+   - Patrón AAA (Arrange-Act-Assert) aplicado
+   - Todos los tests pasando ✅
+
+2. ✅ **Configuración**
+   - Scripts en `package.json`: `test:integration` y `test:integration:watch`
+   - MongoDB Product configurado (puerto 27019)
+
+### **Ejecutar Tests de Integración**
+
+```bash
+cd product
+npm run test:integration
+```
+
+### **Resultado**
+- ✅ 9 tests pasando
+- ✅ 0 tests fallando
+- ✅ Cobertura completa de operaciones CRUD
+- ✅ Validación de esquema MongoDB
+

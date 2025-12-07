@@ -6,6 +6,10 @@ const orderSchema = new mongoose.Schema({
     ref: 'products',
     required: true,
   }],
+  user: {
+    type: String,
+    required: true,
+  },
   totalPrice: {
     type: Number,
     required: true,

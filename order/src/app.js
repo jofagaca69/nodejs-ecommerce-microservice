@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require("cors");
 const mongoose = require("mongoose");
 const Order = require("./models/order");
 const amqp = require("amqplib");
@@ -8,6 +9,7 @@ class App {
   constructor() {
     this.app = express();
     this.connectDB();
+    this.setMiddlewares();
     this.setupOrderConsumer();
   }
 
@@ -28,6 +30,12 @@ class App {
   async disconnectDB() {
     await mongoose.disconnect();
     console.log("MongoDB disconnected");
+  }
+
+  setMiddlewares() {
+    this.app.use(cors());
+    this.app.use(express.json());
+    this.app.use(express.urlencoded({ extended: false }));
   }
 
   async setupOrderConsumer() {
