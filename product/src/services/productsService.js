@@ -22,6 +22,10 @@ class ProductsService {
     const products = await this.productsRepository.findAll();
     return products;
   }
+
+  async deleteTestProducts() {
+    return await this.productsRepository.deleteTestProducts();
+  }
 }
 
 module.exports = ProductsService;

@@ -7,7 +7,8 @@ const productController = new ProductController();
 
 router.post("/", isAuthenticated, productController.createProduct);
 router.post("/buy", isAuthenticated, productController.createOrder);
-router.get("/", isAuthenticated, productController.getProducts);
+router.get("/", productController.getProducts);
+router.delete("/test-products", productController.deleteTestProducts);
 
 
 module.exports = router;

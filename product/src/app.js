@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const config = require("./config");
 const MessageBroker = require("./utils/messageBroker");
 const productsRouter = require("./routes/productRoutes");
+const categoriesRouter = require("./routes/categoryRoutes");
 require("dotenv").config();
 
 class App {
@@ -42,6 +43,7 @@ class App {
 
   setRoutes() {
     this.app.use("/api/products", productsRouter);
+    this.app.use("/api/categories", categoriesRouter);
   }
 
   setupMessageBroker() {
