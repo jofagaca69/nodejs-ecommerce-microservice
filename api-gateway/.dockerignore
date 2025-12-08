@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 node_modules
 npm-debug.log
 .env
@@ -12,3 +13,8 @@ coverage
 __tests__
 *.test.js
 
+=======
+.env
+node_modules
+.DS_Store
+>>>>>>> 2cd80cef1ccdcbe2a87017f5ad5c1d6b19d38956
