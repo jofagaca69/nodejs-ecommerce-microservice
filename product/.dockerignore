@@ -1,0 +1,16 @@
+node_modules
+npm-debug.log
+.env
+.git
+.gitignore
+README.md
+*.md
+.DS_Store
+coverage
+.nyc_output
+*.log
+__tests__
+*.test.js
+jest.config.js
+pnpm-lock.yaml
+
