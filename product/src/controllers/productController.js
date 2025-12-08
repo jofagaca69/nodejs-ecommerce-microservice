@@ -105,11 +105,15 @@ class ProductController {
 
   async getProducts(req, res, next) {
     try {
-      const token = req.headers.authorization;
-      if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
+      const { category } = req.query;
+
+      // Build filter object
+      const filter = {};
+      if (category) {
+        filter.categories = category;
       }
-      const products = await Product.find({});
+
+      const products = await Product.find(filter).populate('categories');
 
       res.status(200).json(products);
     } catch (error) {

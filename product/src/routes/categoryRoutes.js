@@ -6,7 +6,7 @@ const router = express.Router();
 const categoryController = new CategoryController();
 
 router.post("/", isAuthenticated, categoryController.createCategory.bind(categoryController));
-router.get("/", isAuthenticated, categoryController.getCategories.bind(categoryController));
+router.get("/", categoryController.getCategories.bind(categoryController));
 router.delete("/test-categories", categoryController.deleteTestCategories.bind(categoryController));
 
 
