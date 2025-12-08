@@ -27,10 +27,6 @@ class CategoryController {
 
   async getCategories(req, res, next) {
     try {
-      const token = req.headers.authorization;
-      if (!token) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
       const categories = await categoriesService.getCategories();
       return res.status(200).json(categories);
     } catch (error) {
