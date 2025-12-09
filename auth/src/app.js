@@ -44,6 +44,12 @@ class App {
     this.app.post("/register", (req, res) => this.authController.register(req, res));
     this.app.get("/dashboard", authMiddleware, (req, res) => res.json({ message: "Welcome to dashboard" }));
     this.app.post("/delete-test-users", (req, res) => this.authController.deleteTestUsers(req, res));
+    
+    // Rutas de gestión de usuarios
+    this.app.get("/users", (req, res) => this.authController.getAllUsers(req, res));
+    this.app.get("/users/:id", (req, res) => this.authController.getUserById(req, res));
+    this.app.put("/users/:id", (req, res) => this.authController.updateUser(req, res));
+    this.app.delete("/users/:id", (req, res) => this.authController.deleteUser(req, res));
   }
 
   start() {

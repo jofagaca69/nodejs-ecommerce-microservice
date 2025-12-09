@@ -37,7 +37,11 @@ app.use("/products", (req, res) => {
   proxy.web(req, res, { target: "http://product:3001" });
 });
 
-// Route requests to the order service
+// Route requests to the order service (both /order and /orders for compatibility)
+app.use("/order", (req, res) => {
+  proxy.web(req, res, { target: "http://order:3002" });
+});
+
 app.use("/orders", (req, res) => {
   proxy.web(req, res, { target: "http://order:3002" });
 });

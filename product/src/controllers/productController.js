@@ -133,6 +133,80 @@ class ProductController {
       return res.status(500).json({ message: "Error al eliminar productos de prueba" });
     }
   }
+
+  // Obtener estadísticas del inventario
+  async getInventoryStats(req, res) {
+    try {
+      const totalProducts = await Product.countDocuments();
+      
+      const valueResult = await Product.aggregate([
+        {
+          $group: {
+            _id: null,
+            totalValue: { $sum: { $multiply: ['$price', '$stock'] } }
+          }
+        }
+      ]);
+      const totalValue = valueResult.length > 0 ? valueResult[0].totalValue : 0;
+
+      const lowStockCount = await Product.countDocuments({ stock: { $lte: 10 } });
+
+      const categories = await Product.distinct('categories');
+      const categoriesCount = categories.length;
+
+      res.json({
+        totalProducts,
+        totalValue,
+        lowStockCount,
+        categoriesCount
+      });
+    } catch (error) {
+      console.error('Error getting inventory stats:', error);
+      res.status(500).json({ message: 'Error al obtener estadísticas del inventario' });
+    }
+  }
+
+  // Obtener productos con stock bajo
+  async getLowStockProducts(req, res) {
+    try {
+      const threshold = parseInt(req.query.threshold) || 10;
+      const products = await Product.find({ stock: { $lte: threshold } })
+        .populate('categories')
+        .sort({ stock: 1 });
+      
+      res.json(products);
+    } catch (error) {
+      console.error('Error getting low stock products:', error);
+      res.status(500).json({ message: 'Error al obtener productos con stock bajo' });
+    }
+  }
+
+  // Actualizar stock de un producto
+  async updateProductStock(req, res) {
+    try {
+      const { id } = req.params;
+      const { stock } = req.body;
+
+      if (stock === undefined || stock < 0) {
+        return res.status(400).json({ message: 'Stock inválido' });
+      }
+
+      const product = await Product.findByIdAndUpdate(
+        id,
+        { stock },
+        { new: true, runValidators: true }
+      ).populate('categories');
+
+      if (!product) {
+        return res.status(404).json({ message: 'Producto no encontrado' });
+      }
+
+      res.json(product);
+    } catch (error) {
+      console.error('Error updating product stock:', error);
+      res.status(500).json({ message: 'Error al actualizar el stock del producto' });
+    }
+  }
 }
 
 module.exports = ProductController;

@@ -46,6 +46,34 @@ class AuthService {
     // Delete all users with a username that starts with "test"
     await User.deleteMany({ username: /^test/ });
   }
+
+  async getAllUsers() {
+    const users = await User.find().select('-password');
+    return users;
+  }
+
+  async getUserById(userId) {
+    const user = await User.findById(userId).select('-password');
+    return user;
+  }
+
+  async updateUser(userId, updateData) {
+    // No permitir actualizar la contraseña directamente
+    const { password, ...safeUpdateData } = updateData;
+    
+    const user = await User.findByIdAndUpdate(
+      userId,
+      safeUpdateData,
+      { new: true, runValidators: true }
+    ).select('-password');
+    
+    return user;
+  }
+
+  async deleteUser(userId) {
+    const user = await User.findByIdAndDelete(userId);
+    return user;
+  }
 }
 
 module.exports = AuthService;

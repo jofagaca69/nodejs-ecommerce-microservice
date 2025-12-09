@@ -4,12 +4,14 @@ const mongoose = require("mongoose");
 const Order = require("./models/order");
 const amqp = require("amqplib");
 const config = require("./config");
+const orderRoutes = require("./routes/orderRoutes");
 
 class App {
   constructor() {
     this.app = express();
     this.connectDB();
     this.setMiddlewares();
+    this.setRoutes();
     this.setupOrderConsumer();
   }
 
@@ -36,6 +38,10 @@ class App {
     this.app.use(cors());
     this.app.use(express.json());
     this.app.use(express.urlencoded({ extended: false }));
+  }
+
+  setRoutes() {
+    this.app.use('/api', orderRoutes);
   }
 
   async setupOrderConsumer() {
