@@ -9,7 +9,8 @@
     "test:unit:watch": "jest --watch",
     "test:integration": "jest --runInBand __tests__/integration",
     "test:integration:watch": "jest --watch __tests__/integration",
-    "start": "node index.js"
+    "start": "node index.js",
+    "fill-db": "node src/utils/db_filler.js"
   },
   "keywords": [],
   "author": "",
