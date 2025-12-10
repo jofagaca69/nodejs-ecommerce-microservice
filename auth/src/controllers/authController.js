@@ -10,14 +10,42 @@ class AuthController {
   }
 
   async login(req, res) {
-    const { username, password } = req.body;
+    const { username, password, requireRole } = req.body;
 
-    const result = await this.authService.login(username, password);
+    // Log admin login attempts with structured logging
+    if (requireRole) {
+      console.log(`[Admin Login] Attempt - Username: ${username}, RequireRole: ${requireRole}, Timestamp: ${new Date().toISOString()}`);
+    } else {
+      console.log(`[User Login] Attempt - Username: ${username}, Timestamp: ${new Date().toISOString()}`);
+    }
+
+    const result = await this.authService.login(username, password, requireRole);
 
     if (result.success) {
-      res.json({ token: result.token });
+      if (requireRole) {
+        console.log(`[Admin Login] Success - Username: ${username}, Role: ${requireRole}, Timestamp: ${new Date().toISOString()}`);
+      } else {
+        console.log(`[User Login] Success - Username: ${username}, Timestamp: ${new Date().toISOString()}`);
+      }
+      res.json({ success: true, token: result.token });
     } else {
-      res.status(400).json({ message: result.message });
+      // Return appropriate status code based on error type
+      if (result.userRole && requireRole) {
+        // User doesn't have required role
+        console.log(`[Admin Login] Failed - Username: ${username}, RequiredRole: ${requireRole}, UserRole: ${result.userRole}, Timestamp: ${new Date().toISOString()}`);
+        res.status(403).json({ 
+          success: false,
+          message: result.message,
+          userRole: result.userRole
+        });
+      } else {
+        // Invalid credentials
+        console.log(`[Login] Failed - Invalid credentials for username: ${username}, Timestamp: ${new Date().toISOString()}`);
+        res.status(401).json({ 
+          success: false,
+          message: result.message 
+        });
+      }
     }
   }
 
@@ -88,12 +116,18 @@ class AuthController {
       const { id } = req.params;
       const updateData = req.body;
       
+      // Log customer information update
+      console.log(`[Customer Update] User ID: ${id}, Fields: ${Object.keys(updateData).join(', ')}`);
+      
       const updatedUser = await this.authService.updateUser(id, updateData);
       if (!updatedUser) {
         return res.status(404).json({ message: 'Usuario no encontrado' });
       }
+      
+      console.log(`[Customer Update] Success - User ID: ${id}`);
       res.json(updatedUser);
     } catch (err) {
+      console.error(`[Customer Update] Error - User ID: ${req.params.id}, Error: ${err.message}`);
       res.status(400).json({ message: err.message });
     }
   }

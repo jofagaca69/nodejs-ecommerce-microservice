@@ -10,6 +10,7 @@
     "test:db:select": "node src/db-tests/test_select.js",
     "test:db:constraints": "node src/db-tests/test_constraints.js",
     "test:integration": "jest --runInBand __tests__/integration",
+    "fill-db": "node src/utils/db_filler.js",
     "start": "node index.js"
   },
   "keywords": [],
