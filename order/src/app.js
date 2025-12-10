@@ -59,6 +59,13 @@ class App {
           // Consume messages from the order queue on buy
           console.log("Consuming ORDER service");
           const { products, username, orderId } = JSON.parse(data.content);
+          
+          // Validar que username esté presente
+          if (!username) {
+            console.error(`[Order ${orderId || 'unknown'}] Error: username is missing from message`);
+            channel.ack(data); // ACK para evitar reprocesar el mensaje
+            return;
+          }
   
           const newOrder = new Order({
             products,
@@ -67,7 +74,13 @@ class App {
           });
   
           // Save order to DB
-          await newOrder.save();
+          try {
+            await newOrder.save();
+          } catch (error) {
+            console.error(`[Order ${orderId || 'unknown'}] Error saving order:`, error.message);
+            channel.ack(data); // ACK incluso si falla para evitar reprocesar
+            return;
+          }
   
           // Send ACK to ORDER service
           channel.ack(data);

@@ -109,4 +109,106 @@ describe("Auth Service <--> MongoDB Integration Tests", () => {
     expect(result.message).toMatch("Invalid username or password");
     expect(result).not.toHaveProperty("token");
   });
+
+  describe('User Update Integration Tests', () => {
+    it("INT-AUTH-006: Debe actualizar usuario con name, phone, y address", async () => {
+      // Arrange
+      const user = await authService.register({
+        username: 'testuser_update1',
+        password: 'password123'
+      });
+
+      // Act
+      const updatedUser = await authService.updateUser(user._id.toString(), {
+        name: 'John Doe',
+        phone: '1234567890',
+        address: '123 Main Street'
+      });
+
+      // Assert
+      expect(updatedUser.name).toBe('John Doe');
+      expect(updatedUser.phone).toBe('1234567890');
+      expect(updatedUser.address).toBe('123 Main Street');
+      
+      // Verify in database
+      const userInDb = await User.findById(user._id);
+      expect(userInDb.name).toBe('John Doe');
+      expect(userInDb.phone).toBe('1234567890');
+      expect(userInDb.address).toBe('123 Main Street');
+    });
+
+    it("INT-AUTH-007: Debe rechazar actualización con formato de teléfono inválido", async () => {
+      // Arrange
+      const user = await authService.register({
+        username: 'testuser_update2',
+        password: 'password123'
+      });
+
+      // Act & Assert
+      await expect(
+        authService.updateUser(user._id.toString(), { phone: '123-456-7890' })
+      ).rejects.toThrow('Phone number must be 8-15 digits');
+    });
+
+    it("INT-AUTH-008: Debe rechazar actualización con teléfono muy corto", async () => {
+      // Arrange
+      const user = await authService.register({
+        username: 'testuser_update3',
+        password: 'password123'
+      });
+
+      // Act & Assert
+      await expect(
+        authService.updateUser(user._id.toString(), { phone: '1234567' })
+      ).rejects.toThrow('Phone number must be 8-15 digits');
+    });
+
+    it("INT-AUTH-009: Debe rechazar actualización con teléfono muy largo", async () => {
+      // Arrange
+      const user = await authService.register({
+        username: 'testuser_update4',
+        password: 'password123'
+      });
+
+      // Act & Assert
+      await expect(
+        authService.updateUser(user._id.toString(), { phone: '1234567890123456' })
+      ).rejects.toThrow('Phone number must be 8-15 digits');
+    });
+
+    it("INT-AUTH-010: Debe actualizar solo el campo name", async () => {
+      // Arrange
+      const user = await authService.register({
+        username: 'testuser_update5',
+        password: 'password123'
+      });
+
+      // Act
+      const updatedUser = await authService.updateUser(user._id.toString(), {
+        name: 'Jane Smith'
+      });
+
+      // Assert
+      expect(updatedUser.name).toBe('Jane Smith');
+      expect(updatedUser.phone).toBeUndefined();
+      expect(updatedUser.address).toBeUndefined();
+    });
+
+    it("INT-AUTH-011: Debe actualizar solo el campo phone", async () => {
+      // Arrange
+      const user = await authService.register({
+        username: 'testuser_update6',
+        password: 'password123'
+      });
+
+      // Act
+      const updatedUser = await authService.updateUser(user._id.toString(), {
+        phone: '9876543210'
+      });
+
+      // Assert
+      expect(updatedUser.phone).toBe('9876543210');
+      expect(updatedUser.name).toBeUndefined();
+    });
+  });
 });

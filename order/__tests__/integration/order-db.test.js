@@ -205,4 +205,163 @@ describe("Order Service <--> MongoDB Integration Tests", () => {
     const totalSum = userOrders.reduce((acc, o) => acc + o.totalPrice, 0);
     expect(totalSum).toBe(225);
   });
+
+  describe('Dashboard Stats Integration Tests', () => {
+    it('ORDER-INT-010: Dashboard stats should calculate total sales correctly', async () => {
+      // Arrange: Create test orders
+      const orders = [
+        { products: [new mongoose.Types.ObjectId()], user: 'testuser_dashboard1', totalPrice: 100 },
+        { products: [new mongoose.Types.ObjectId()], user: 'testuser_dashboard2', totalPrice: 200 },
+        { products: [new mongoose.Types.ObjectId()], user: 'testuser_dashboard3', totalPrice: 150 }
+      ];
+
+      for (const orderData of orders) {
+        const order = new Order(orderData);
+        await order.save();
+      }
+
+      // Act: Calculate total sales
+      const totalSales = await Order.countDocuments();
+
+      // Assert: Should include our test orders plus any existing orders
+      expect(totalSales).toBeGreaterThanOrEqual(3);
+    });
+
+    it('ORDER-INT-011: Dashboard stats should calculate total revenue correctly', async () => {
+      // Arrange: Create test orders with known prices
+      const orders = [
+        { products: [new mongoose.Types.ObjectId()], user: 'testuser_revenue1', totalPrice: 100 },
+        { products: [new mongoose.Types.ObjectId()], user: 'testuser_revenue2', totalPrice: 200 },
+        { products: [new mongoose.Types.ObjectId()], user: 'testuser_revenue3', totalPrice: 150 }
+      ];
+
+      for (const orderData of orders) {
+        const order = new Order(orderData);
+        await order.save();
+      }
+
+      // Act: Calculate total revenue using aggregation
+      const revenueResult = await Order.aggregate([
+        {
+          $group: {
+            _id: null,
+            total: { $sum: '$totalPrice' }
+          }
+        }
+      ]);
+
+      const totalRevenue = revenueResult.length > 0 ? revenueResult[0].total : 0;
+
+      // Assert: Should include our test orders (450) plus any existing revenue
+      expect(totalRevenue).toBeGreaterThanOrEqual(450);
+    });
+
+    it('ORDER-INT-012: Dashboard stats should calculate recent sales for day period', async () => {
+      // Arrange: Create orders with different timestamps
+      const now = new Date();
+      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+      // Recent order (within last 24 hours)
+      const recentOrder = new Order({
+        products: [new mongoose.Types.ObjectId()],
+        user: 'testuser_recent_day',
+        totalPrice: 100,
+        createdAt: now
+      });
+      await recentOrder.save();
+
+      // Old order (more than 24 hours ago)
+      const oldOrder = new Order({
+        products: [new mongoose.Types.ObjectId()],
+        user: 'testuser_old_day',
+        totalPrice: 200,
+        createdAt: twoDaysAgo
+      });
+      await oldOrder.save();
+
+      // Act: Count orders within last 24 hours
+      const recentSales = await Order.countDocuments({
+        createdAt: {
+          $gte: oneDayAgo,
+          $lte: now
+        }
+      });
+
+      // Assert: Should include at least the recent order
+      expect(recentSales).toBeGreaterThanOrEqual(1);
+    });
+
+    it('ORDER-INT-013: Dashboard stats should calculate recent sales for week period', async () => {
+      // Arrange: Create orders with different timestamps
+      const now = new Date();
+      const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const twoWeeksAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+      // Recent order (within last 7 days)
+      const recentOrder = new Order({
+        products: [new mongoose.Types.ObjectId()],
+        user: 'testuser_recent_week',
+        totalPrice: 100,
+        createdAt: now
+      });
+      await recentOrder.save();
+
+      // Old order (more than 7 days ago)
+      const oldOrder = new Order({
+        products: [new mongoose.Types.ObjectId()],
+        user: 'testuser_old_week',
+        totalPrice: 200,
+        createdAt: twoWeeksAgo
+      });
+      await oldOrder.save();
+
+      // Act: Count orders within last 7 days
+      const recentSales = await Order.countDocuments({
+        createdAt: {
+          $gte: oneWeekAgo,
+          $lte: now
+        }
+      });
+
+      // Assert: Should include at least the recent order
+      expect(recentSales).toBeGreaterThanOrEqual(1);
+    });
+
+    it('ORDER-INT-014: Dashboard stats should calculate recent sales for month period', async () => {
+      // Arrange: Create orders with different timestamps
+      const now = new Date();
+      const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const twoMonthsAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+
+      // Recent order (within last 30 days)
+      const recentOrder = new Order({
+        products: [new mongoose.Types.ObjectId()],
+        user: 'testuser_recent_month',
+        totalPrice: 100,
+        createdAt: now
+      });
+      await recentOrder.save();
+
+      // Old order (more than 30 days ago)
+      const oldOrder = new Order({
+        products: [new mongoose.Types.ObjectId()],
+        user: 'testuser_old_month',
+        totalPrice: 200,
+        createdAt: twoMonthsAgo
+      });
+      await oldOrder.save();
+
+      // Act: Count orders within last 30 days
+      const recentSales = await Order.countDocuments({
+        createdAt: {
+          $gte: oneMonthAgo,
+          $lte: now
+        }
+      });
+
+      // Assert: Should include at least the recent order
+      expect(recentSales).toBeGreaterThanOrEqual(1);
+    });
+  });
 });

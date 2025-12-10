@@ -31,6 +31,14 @@ describe("Gateway <--> Product microservice integration", () => {
   });
 
   afterEach(async () => {
+    // Limpiar productos de prueba después de cada test
+    try {
+      await axios.delete(`${gatewayUrl}/products/api/products/test-products`, {
+        headers: { Authorization: `Bearer ${authToken}` }
+      });
+    } catch (error) {
+      // Ignorar errores de limpieza
+    }
     testProductIds = [];
   });
 
@@ -54,7 +62,7 @@ describe("Gateway <--> Product microservice integration", () => {
 
   it("PROD-INT-001: Debe crear un producto exitosamente con todos los campos", async () => {
     const product = {
-      name: "Laptop Test",
+      name: "testproduct_laptop",
       description: "Laptop de prueba para testing",
       price: 1299.99,
       stock: 10,
@@ -80,7 +88,7 @@ describe("Gateway <--> Product microservice integration", () => {
 
   it("PROD-INT-002: Debe rechazar creación de producto sin token de autenticación", async () => {
     const product = {
-      name: "Producto Sin Auth",
+      name: "testproduct_sin_auth",
       description: "Este debe fallar",
       price: 99.99,
       stock: 10,
@@ -97,7 +105,7 @@ describe("Gateway <--> Product microservice integration", () => {
 
   it("PROD-INT-003: Debe listar todos los productos con autenticación válida", async () => {
     const product = {
-      name: "Producto para Listar",
+      name: "testproduct_para_listar",
       description: "Test",
       price: 50.00,
       stock: 10,
@@ -140,7 +148,7 @@ describe("Gateway <--> Product microservice integration", () => {
 
   it("PROD-INT-005: Debe rechazar producto sin campos requeridos", async () => {
     const invalidProduct = {
-      name: "Producto Incompleto"
+      name: "testproduct_incompleto"
     };
 
     const err = await axios
@@ -157,9 +165,9 @@ describe("Gateway <--> Product microservice integration", () => {
 
   it("PROD-INT-006: Debe crear múltiples productos secuencialmente", async () => {
     const products = [
-      { name: "Mouse", description: "Mouse inalámbrico", price: 25.00, stock: 10, categories: [testCategoryId] },
-      { name: "Teclado", description: "Teclado mecánico", price: 75.00, stock: 10, categories: [testCategoryId] },
-      { name: "Monitor", description: "Monitor 24 pulgadas", price: 200.00, stock: 10, categories: [testCategoryId] }
+      { name: "testproduct_mouse", description: "Mouse inalámbrico", price: 25.00, stock: 10, categories: [testCategoryId] },
+      { name: "testproduct_teclado", description: "Teclado mecánico", price: 75.00, stock: 10, categories: [testCategoryId] },
+      { name: "testproduct_monitor", description: "Monitor 24 pulgadas", price: 200.00, stock: 10, categories: [testCategoryId] }
     ];
 
     for (const product of products) {
@@ -182,7 +190,7 @@ describe("Gateway <--> Product microservice integration", () => {
 
   it("PROD-INT-007: Debe retornar la estructura correcta al crear producto", async () => {
     const product = {
-      name: "Producto Verificación",
+      name: "testproduct_verificacion",
       description: "Test de estructura de respuesta",
       price: 45.00,
       stock: 10,

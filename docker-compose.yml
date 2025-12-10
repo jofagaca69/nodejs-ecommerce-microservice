@@ -69,6 +69,8 @@ services:
     depends_on:
       mongodb-auth:
         condition: service_healthy
+      auth-db-filler:
+        condition: service_completed_successfully
     environment:
       - MONGODB_AUTH_URI=mongodb://mongodb-auth:27017/auth
     env_file:
@@ -92,6 +94,18 @@ services:
       - ./order/.env
     networks:
       - ecommerce
+
+  auth-db-filler:
+    build: ./auth
+    depends_on:
+      mongodb-auth:
+        condition: service_healthy
+    environment:
+      - MONGODB_AUTH_URI=mongodb://mongodb-auth:27017/auth
+    networks:
+      - ecommerce
+    command: ["npm", "run", "fill-db"]
+    restart: "no"
 
   product-db-filler:
     build: ./product
