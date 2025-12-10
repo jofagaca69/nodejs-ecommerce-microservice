@@ -93,6 +93,18 @@ services:
     networks:
       - ecommerce
 
+  product-db-filler:
+    build: ./product
+    depends_on:
+      mongodb-product:
+        condition: service_healthy
+    environment:
+      - MONGODB_URI=mongodb://mongodb-product:27017/products
+    networks:
+      - ecommerce
+    command: ["npm", "run", "fill-db"]
+    restart: "no"
+
   product:
     build: ./product
     ports:
