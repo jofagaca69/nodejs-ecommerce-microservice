@@ -48,6 +48,8 @@ class App {
 
   setupMessageBroker() {
     MessageBroker.connect();
+    // The consumer will be set up automatically when RabbitMQ connects
+    // (see messageBroker.js connect method)
   }
 
   start() {

@@ -1,0 +1,6 @@
+projectKey=project-qa-unal-backend
+serverUrl=http://54.156.26.149:9000
+serverVersion=10.0.0.68432
+dashboardUrl=http://54.156.26.149:9000/dashboard?id=project-qa-unal-backend
+ceTaskId=AZsYDhOBBTfTnPpvuVYh
+ceTaskUrl=http://54.156.26.149:9000/api/ce/task?id=AZsYDhOBBTfTnPpvuVYh

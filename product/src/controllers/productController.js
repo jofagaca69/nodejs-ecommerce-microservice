@@ -94,15 +94,18 @@ class ProductController {
         }
       };
 
-      // Setup consumer (this should ideally be done once at startup, but for now we do it per order)
-      messageBroker.consumeMessage("products", completionCallback).catch(err => {
-        console.error(`[Order ${orderId}] Error setting up consumer:`, err);
-      });
+      // Register callback for this orderId (consumer is set up once at startup)
+      messageBroker.registerOrderCallback(orderId, completionCallback);
+      
+      // Ensure consumer is set up (this is idempotent, only sets up once)
+      await messageBroker.setupProductsConsumer();
 
       // Check if RabbitMQ is ready before publishing
       if (!messageBroker.isReady()) {
         console.error(`[Order ${orderId}] RabbitMQ is not connected. Channel: ${messageBroker.channel ? 'exists' : 'null'}, Connected: ${messageBroker.isConnected}`);
         this.ordersMap.delete(orderId);
+        // Clean up callback if RabbitMQ is not ready
+        messageBroker.removeOrderCallback(orderId);
         return res.status(503).json({ 
           message: "El servicio de mensajería no está disponible en este momento. Por favor, verifica que RabbitMQ esté corriendo e intenta nuevamente.",
           orderId: orderId,
@@ -120,6 +123,8 @@ class ProductController {
       if (!publishResult) {
         console.error(`[Order ${orderId}] Failed to publish message to orders queue`);
         this.ordersMap.delete(orderId);
+        // Clean up callback on publish failure
+        messageBroker.removeOrderCallback(orderId);
         return res.status(503).json({ 
           message: "No se pudo procesar la orden. Por favor, intenta nuevamente.",
           orderId: orderId
@@ -140,6 +145,8 @@ class ProductController {
         if (elapsed > MAX_WAIT_TIME) {
           console.error(`[Order ${orderId}] Timed out after ${elapsed}ms`);
           this.ordersMap.delete(orderId);
+          // Clean up callback on timeout
+          messageBroker.removeOrderCallback(orderId);
           return res.status(504).json({ 
             message: "La orden está tomando más tiempo del esperado. Por favor, intenta nuevamente.",
             orderId: orderId
@@ -156,6 +163,8 @@ class ProductController {
       if (!finalOrder || finalOrder.status !== 'completed') {
         console.error(`[Order ${orderId}] Order not completed, current status: ${finalOrder?.status || 'missing'}`);
         this.ordersMap.delete(orderId);
+        // Clean up callback
+        messageBroker.removeOrderCallback(orderId);
         return res.status(500).json({ 
           message: "Error procesando la orden. Por favor, intenta nuevamente.",
           orderId: orderId
@@ -164,6 +173,9 @@ class ProductController {
 
       // Once the order is marked as completed, return the complete order details
       console.log(`[Order ${orderId}] Returning completed order`);
+      // Clean up callback and order from map
+      this.ordersMap.delete(orderId);
+      messageBroker.removeOrderCallback(orderId);
       return res.status(201).json(finalOrder);
     } catch (error) {
       console.error('[createOrder] Error:', error);
